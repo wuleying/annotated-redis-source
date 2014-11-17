@@ -101,9 +101,9 @@ typedef struct list {
 list *listCreate(void);
 // 释放链表
 void listRelease(list *list);
-// 添加到链表头节点
+// 新建一个节点，值为value, 并添加到链表头
 list *listAddNodeHead(list *list, void *value);
-// 添加到链表尾节点
+// 新建一个节点，值为value, 并添加到链表尾
 list *listAddNodeTail(list *list, void *value);
 // 在链表中插入节点
 list *listInsertNode(list *list, listNode *old_node, void *value, int after);

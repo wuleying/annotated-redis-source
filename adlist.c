@@ -1,4 +1,5 @@
 /* adlist.c - A generic doubly linked list implementation
+ * 一个通用的双向链表实现
  *
  * Copyright (c) 2006-2010, Salvatore Sanfilippo <antirez at gmail dot com>
  * All rights reserved.
@@ -38,36 +39,68 @@
  * by the user before to call AlFreeList().
  *
  * On error, NULL is returned. Otherwise the pointer to the new list. */
+
+/*
+ * 创建一个新链表
+ *
+ * 失败返回 NULL，成功返回一个新链表
+ *
+ */
 list *listCreate(void)
 {
     struct list *list;
 
+    // 分配内存
     if ((list = zmalloc(sizeof(*list))) == NULL)
         return NULL;
+
+    // 初始化头节点与尾节点，设为NULL
     list->head = list->tail = NULL;
+    // 链表长度为0
     list->len = 0;
+    // 复制方法为NULL
     list->dup = NULL;
+    // 释放方法为NULL
     list->free = NULL;
+    // 查找匹配方法为NULL
     list->match = NULL;
+
+    // 返回链表
     return list;
 }
 
 /* Free the whole list.
  *
  * This function can't fail. */
+
+/*
+ * 释放链表
+ * list 链表指针
+ *
+ */
 void listRelease(list *list)
 {
+    // 用来保存链表节点数量
     unsigned long len;
+    // 当前节点与后续节点
     listNode *current, *next;
 
+    // 将链表头设为当前节点
     current = list->head;
+    // 保存链表节点数量
     len = list->len;
+    // 遍历链表
     while(len--) {
+        // 获取后续节点
         next = current->next;
+        // 如果设置了释放方法，使用释放方法释放当前节点的值
         if (list->free) list->free(current->value);
+        // 释放当前节点
         zfree(current);
+        // 将后续节点设为当前节点
         current = next;
     }
+    // 释放整个链表
     zfree(list);
 }
 
@@ -77,23 +110,46 @@ void listRelease(list *list)
  * On error, NULL is returned and no operation is performed (i.e. the
  * list remains unaltered).
  * On success the 'list' pointer you pass to the function is returned. */
+
+/*
+ * 新建一个节点，值为value, 并添加到链表头
+ * list 链表指针
+ * value 值指针
+ *
+ */
 list *listAddNodeHead(list *list, void *value)
 {
+    // 链表节点
     listNode *node;
 
+    // 为节点分配内存
     if ((node = zmalloc(sizeof(*node))) == NULL)
         return NULL;
+
+    // 设置节点的值
     node->value = value;
+
     if (list->len == 0) {
+        /* 空链表 */
+        // 链表头与链表尾设为当前节点
         list->head = list->tail = node;
+        // 当前节点的前驱和后续都设为NULL
         node->prev = node->next = NULL;
     } else {
+        /* 非空链表 */
+        // 当前节点前驱设为NULL
         node->prev = NULL;
+        // 当前节点后续设为链表头
         node->next = list->head;
+        // 链表头前驱设为当前节点
         list->head->prev = node;
+        // 链表头设为当前节点
         list->head = node;
     }
+    // 链表节点数量加1
     list->len++;
+
+    // 返回链表
     return list;
 }
 
@@ -103,6 +159,13 @@ list *listAddNodeHead(list *list, void *value)
  * On error, NULL is returned and no operation is performed (i.e. the
  * list remains unaltered).
  * On success the 'list' pointer you pass to the function is returned. */
+
+/*
+ * 新建一个节点，值为value, 并添加到链表尾
+ * list 链表指针
+ * value 值指针
+ *
+ */
 list *listAddNodeTail(list *list, void *value)
 {
     listNode *node;
