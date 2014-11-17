@@ -1,4 +1,5 @@
 /* adlist.h - A generic doubly linked list implementation
+ * 一个通用的双向链表实现
  *
  * Copyright (c) 2006-2012, Salvatore Sanfilippo <antirez at gmail dot com>
  * All rights reserved.
@@ -33,61 +34,103 @@
 
 /* Node, List, and Iterator are the only data structures used currently. */
 
+// 双向链表节点
 typedef struct listNode {
+    // 前驱
     struct listNode *prev;
+    // 后续
     struct listNode *next;
+    // 值
     void *value;
 } listNode;
 
+// 链表迭代器
 typedef struct listIter {
+    // 后续
     listNode *next;
+    // 迭代方向
     int direction;
 } listIter;
 
+// 双向链表
 typedef struct list {
+    // 头指针
     listNode *head;
+    // 尾指针
     listNode *tail;
+    // 复制方法
     void *(*dup)(void *ptr);
+    // 释放方法
     void (*free)(void *ptr);
+    // 查询匹配方法
     int (*match)(void *ptr, void *key);
+    // 链表节点数量
     unsigned long len;
 } list;
 
 /* Functions implemented as macros */
+// 返回链表的节点数量
 #define listLength(l) ((l)->len)
+// 返回链表的头节点
 #define listFirst(l) ((l)->head)
+// 返回链表的尾节点
 #define listLast(l) ((l)->tail)
+// 返回节点的前驱节点
 #define listPrevNode(n) ((n)->prev)
+// 返回节点的后续节点
 #define listNextNode(n) ((n)->next)
+// 返回节点的值
 #define listNodeValue(n) ((n)->value)
 
+// 设置链表的复制方法
 #define listSetDupMethod(l,m) ((l)->dup = (m))
+// 设置链表的释放方法
 #define listSetFreeMethod(l,m) ((l)->free = (m))
+// 设置链表的查询匹配方法
 #define listSetMatchMethod(l,m) ((l)->match = (m))
 
+// 返回链表的复制方法
 #define listGetDupMethod(l) ((l)->dup)
+// 返回链表的释放方法
 #define listGetFree(l) ((l)->free)
+// 返回链表的查询匹配方法
 #define listGetMatchMethod(l) ((l)->match)
 
 /* Prototypes */
+// 创建链表
 list *listCreate(void);
+// 释放链表
 void listRelease(list *list);
+// 添加到链表头节点
 list *listAddNodeHead(list *list, void *value);
+// 添加到链表尾节点
 list *listAddNodeTail(list *list, void *value);
+// 在链表中插入节点
 list *listInsertNode(list *list, listNode *old_node, void *value, int after);
+// 在链表中删除节点
 void listDelNode(list *list, listNode *node);
+// 返回一个链表迭代器
 listIter *listGetIterator(list *list, int direction);
+// 使用链表迭代器访问下一个节点
 listNode *listNext(listIter *iter);
 void listReleaseIterator(listIter *iter);
+// 释放链表迭代器
 list *listDup(list *orig);
+// 按节点值搜索链表
 listNode *listSearchKey(list *list, void *key);
+// 按节点索引返回节点
 listNode *listIndex(list *list, long index);
+// 将迭代器的迭代指针倒回到链表头
 void listRewind(list *list, listIter *li);
+// 将迭代器的迭代指针倒回到链表尾
 void listRewindTail(list *list, listIter *li);
+// 取出链表的尾节点 将它设为新的头节点
 void listRotate(list *list);
 
 /* Directions for iterators */
+// 迭代器迭代方向 从头到尾
 #define AL_START_HEAD 0
+// 迭代器迭代方向 从尾到头
 #define AL_START_TAIL 1
 
 #endif /* __ADLIST_H__ */

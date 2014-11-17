@@ -1,4 +1,5 @@
 /* zmalloc - total amount of allocated memory aware version of malloc()
+ * 内存管理
  *
  * Copyright (c) 2009-2010, Salvatore Sanfilippo <antirez at gmail dot com>
  * All rights reserved.
@@ -31,7 +32,7 @@
 #ifndef __ZMALLOC_H
 #define __ZMALLOC_H
 
-/* Double expansion needed for stringification of macro values. */
+/* Double expansion needed for string ification of macro values. */
 #define __xstr(s) __str(s)
 #define __str(s) #s
 
