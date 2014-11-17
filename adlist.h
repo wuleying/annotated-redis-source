@@ -109,12 +109,13 @@ list *listAddNodeTail(list *list, void *value);
 list *listInsertNode(list *list, listNode *old_node, void *value, int after);
 // 在链表中删除节点
 void listDelNode(list *list, listNode *node);
-// 返回一个链表迭代器
+// 返回链表迭代器
 listIter *listGetIterator(list *list, int direction);
 // 使用链表迭代器访问下一个节点
 listNode *listNext(listIter *iter);
-void listReleaseIterator(listIter *iter);
 // 释放链表迭代器
+void listReleaseIterator(listIter *iter);
+// 复制整个链表
 list *listDup(list *orig);
 // 按节点值搜索链表
 listNode *listSearchKey(list *list, void *key);
@@ -124,7 +125,7 @@ listNode *listIndex(list *list, long index);
 void listRewind(list *list, listIter *li);
 // 将迭代器的迭代指针倒回到链表尾
 void listRewindTail(list *list, listIter *li);
-// 取出链表的尾节点 将它设为新的头节点
+// 分离链表的尾节点 将它设为新的头节点
 void listRotate(list *list);
 
 /* Directions for iterators */
