@@ -570,7 +570,7 @@ listNode *listIndex(list *list, long index) {
         // 从链表头向尾遍历 直到碰到节点索引对应节点的后续
         while(index-- && n) n = n->next;
     }
-    
+
     // 返回对应节点
     return n;
 }

@@ -1,6 +1,7 @@
 /* A simple event-driven programming library. Originally I wrote this code
  * for the Jim's event-loop (Jim is a Tcl interpreter) but later translated
  * it in form of a library for easy reuse.
+ * 事件驱动库
  *
  * Copyright (c) 2006-2012, Salvatore Sanfilippo <antirez at gmail dot com>
  * All rights reserved.
@@ -33,13 +34,19 @@
 #ifndef __AE_H__
 #define __AE_H__
 
+// 事件执行状态 成功
 #define AE_OK 0
+// 事件执行状态 失败
 #define AE_ERR -1
 
+// 文件事件状态 未设置
 #define AE_NONE 0
+// 文件事件状态 可读
 #define AE_READABLE 1
+// 文件事件状态 可写
 #define AE_WRITABLE 2
 
+//
 #define AE_FILE_EVENTS 1
 #define AE_TIME_EVENTS 2
 #define AE_ALL_EVENTS (AE_FILE_EVENTS|AE_TIME_EVENTS)
