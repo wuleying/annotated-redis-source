@@ -1,4 +1,5 @@
 /* ae.c module for illumos event ports.
+ * 事件驱动模块 事件端口(Illumos)
  *
  * Copyright (c) 2012, Joyent, Inc. All rights reserved.
  *

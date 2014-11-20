@@ -121,9 +121,9 @@ typedef struct aeEventLoop {
     int maxfd;   /* highest file descriptor currently registered */
     // 当前已追踪的最大文件描述符
     int setsize; /* max number of file descriptors tracked */
-    // 生成下个时间事件ID
+    // 生成下个事件ID
     long long timeEventNextId;
-    // 最后一次执行时间事件的时间
+    // 最后一次执行事件的时间
     time_t lastTime;     /* Used to detect system clock skew */
     // 已注册的事件
     aeFileEvent *events; /* Registered events */

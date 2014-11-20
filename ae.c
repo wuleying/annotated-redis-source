@@ -1,6 +1,7 @@
 /* A simple event-driven programming library. Originally I wrote this code
  * for the Jim's event-loop (Jim is a Tcl interpreter) but later translated
  * it in form of a library for easy reuse.
+ * 事件驱动库
  *
  * Copyright (c) 2006-2010, Salvatore Sanfilippo <antirez at gmail dot com>
  * All rights reserved.
@@ -47,52 +48,95 @@
 /* Include the best multiplexing layer supported by this system.
  * The following should be ordered by performances, descending. */
 #ifdef HAVE_EVPORT
+// 包含事件端口模块(Illumos)
 #include "ae_evport.c"
 #else
     #ifdef HAVE_EPOLL
+    // 包含epoll接口模块(Linux)
     #include "ae_epoll.c"
     #else
         #ifdef HAVE_KQUEUE
+        // 包含kqueue接口模块(FreeBSD)
         #include "ae_kqueue.c"
         #else
+        // 包含select接口模块(Window)
         #include "ae_select.c"
         #endif
     #endif
 #endif
 
+/*
+ * 创建事件处理器
+ * setsize 已追踪的最大文件描述符
+ *
+ */
 aeEventLoop *aeCreateEventLoop(int setsize) {
+
+    // 事件处理器
     aeEventLoop *eventLoop;
+    // 循环事件计数器
     int i;
 
+    // 创建事件处理器
     if ((eventLoop = zmalloc(sizeof(*eventLoop))) == NULL) goto err;
+
+    // 初始化文件事件结构
     eventLoop->events = zmalloc(sizeof(aeFileEvent)*setsize);
+    // 初始化已就绪事件结构
     eventLoop->fired = zmalloc(sizeof(aeFiredEvent)*setsize);
+
+    // 检查文件事件与已就绪事件是否为NULL
     if (eventLoop->events == NULL || eventLoop->fired == NULL) goto err;
+
+    // 设置已追踪的最大文件描述符
     eventLoop->setsize = setsize;
+    // 设置最后一次执行事件的时间
     eventLoop->lastTime = time(NULL);
+    // 设置时间事件头
     eventLoop->timeEventHead = NULL;
+    // 设置下个事件ID
     eventLoop->timeEventNextId = 0;
+    // 标记为启动事件
     eventLoop->stop = 0;
+    // 设置当前已注册的最大文件描述符
     eventLoop->maxfd = -1;
+    // 设置事件处理前的sleep方法
     eventLoop->beforesleep = NULL;
+
+    // 创建事件API
     if (aeApiCreate(eventLoop) == -1) goto err;
+
     /* Events with mask == AE_NONE are not set. So let's initialize the
      * vector with it. */
+    // 初始化事件状态类型为未设置
     for (i = 0; i < setsize; i++)
         eventLoop->events[i].mask = AE_NONE;
+
+    // 返回事件处理器
     return eventLoop;
 
+// 错误处理
 err:
     if (eventLoop) {
+        // 释放文件事件
         zfree(eventLoop->events);
+        // 释放已就绪事件
         zfree(eventLoop->fired);
+        // 释放事件处理器
         zfree(eventLoop);
     }
+    // 返回NULL
     return NULL;
 }
 
 /* Return the current set size. */
+/*
+ * 获取当前已追踪的最大文件描述符
+ * eventLoop 事件处理器指针
+ *
+ */
 int aeGetSetSize(aeEventLoop *eventLoop) {
+    // 返回当前已追踪的最大文件描述符
     return eventLoop->setsize;
 }
 
