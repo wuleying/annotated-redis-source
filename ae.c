@@ -263,73 +263,154 @@ int aeCreateFileEvent(aeEventLoop *eventLoop, int fd, int mask,
  * 删除文件事件
  *
  * eventLoop 事件处理器指针
- * fd
- * mask
+ * fd 事件文件描述符
+ * mask 事件类型掩码
+ *
  */
 void aeDeleteFileEvent(aeEventLoop *eventLoop, int fd, int mask)
 {
+    // 事件文件描述符大于等于已追踪的最大文件描述符，直接返回
     if (fd >= eventLoop->setsize) return;
+    
+    // 获取文件描述符对应的文件事件指针
     aeFileEvent *fe = &eventLoop->events[fd];
+    
+    // 事件类型掩码为未设置，直接返回
     if (fe->mask == AE_NONE) return;
 
+    // 使用对应平台模块中的aeApiDelEvent方法
     aeApiDelEvent(eventLoop, fd, mask);
+    
+    // 设置事件类型掩码，事件类型掩码取反然后与当前事件类型进行按位与运算
     fe->mask = fe->mask & (~mask);
+    
+    // 当前事件文件描述符等于已注册的最大文件描述符并且当前文件事件状态为未设置
     if (fd == eventLoop->maxfd && fe->mask == AE_NONE) {
         /* Update the max fd */
+        // 循环计数器
         int j;
 
+        // 获取最大文件描述符
         for (j = eventLoop->maxfd-1; j >= 0; j--)
             if (eventLoop->events[j].mask != AE_NONE) break;
+        
+        // 更新已注册的最大文件描述符
         eventLoop->maxfd = j;
     }
 }
 
+/*
+ * 获取文件事件
+ * 
+ * eventLoop 事件处理器指针
+ * fd 事件文件描述符
+ *
+ */
 int aeGetFileEvents(aeEventLoop *eventLoop, int fd) {
+    
+    // 事件文件描述符大于等于已追踪的最大文件描述符，直接返回0
     if (fd >= eventLoop->setsize) return 0;
+    
+    // 获取文件描述符对应的文件事件指针
     aeFileEvent *fe = &eventLoop->events[fd];
 
+    // 返回文件事件类型掩码
     return fe->mask;
 }
 
+/*
+ * 获取当前时间 秒与毫秒
+ *
+ * seconds 秒
+ * milliseconds 毫秒
+ *
+ */
 static void aeGetTime(long *seconds, long *milliseconds)
 {
+    // 定义timeval结构体
     struct timeval tv;
 
+    // 获得当前精确时间
     gettimeofday(&tv, NULL);
+    // 秒
     *seconds = tv.tv_sec;
+    // 毫秒
     *milliseconds = tv.tv_usec/1000;
 }
 
+/*
+ * 给当前时间加上N毫秒
+ *
+ * milliseconds 毫秒
+ * sec 秒
+ * ms 毫秒
+ *
+ */
 static void aeAddMillisecondsToNow(long long milliseconds, long *sec, long *ms) {
+    
+    // 初始化要用到的变量
     long cur_sec, cur_ms, when_sec, when_ms;
 
+    // 获取当前时间
     aeGetTime(&cur_sec, &cur_ms);
+    
+    // 获取当前时间加上N毫秒后的秒数
     when_sec = cur_sec + milliseconds/1000;
+    // 获取当前时间加上N毫秒后的毫秒数
     when_ms = cur_ms + milliseconds%1000;
+    
+    // 再对毫秒数进行一次处理，大于1000毫秒将秒数加1，毫秒数减1000
     if (when_ms >= 1000) {
         when_sec ++;
         when_ms -= 1000;
     }
+    
+    // 最终得到的秒与毫秒数
     *sec = when_sec;
     *ms = when_ms;
 }
 
+/*
+ * 创建时间事件
+ * 
+ * eventLoop 事件处理器指针
+ * milliseconds 毫秒数
+ * proc 时间事件处理方法
+ * clientData 复用库的私有数据
+ * finalizerProc 时间事件释放方法
+ *
+ */
 long long aeCreateTimeEvent(aeEventLoop *eventLoop, long long milliseconds,
         aeTimeProc *proc, void *clientData,
         aeEventFinalizerProc *finalizerProc)
 {
+    // 将时间事件ID加1
     long long id = eventLoop->timeEventNextId++;
+    
+    // 定义时间事件指针
     aeTimeEvent *te;
 
+    // 分配内存
     te = zmalloc(sizeof(*te));
+    
+    // 分配内存失败返回错误状态
     if (te == NULL) return AE_ERR;
+    
+    // 设置时间事件ID
     te->id = id;
+    // 设置时间事件到达的秒与毫秒数
     aeAddMillisecondsToNow(milliseconds,&te->when_sec,&te->when_ms);
+    // 设置时间事件处理方法
     te->timeProc = proc;
+    // 设置时间事件释放方法
     te->finalizerProc = finalizerProc;
+    // 设置复用库的私有数据
     te->clientData = clientData;
+    // 设置指向下个时间事件的指针
     te->next = eventLoop->timeEventHead;
+    // 将事件处理器的时间事件头设为当前时间事件
     eventLoop->timeEventHead = te;
+    // 返回时间事件ID
     return id;
 }
 
