@@ -125,7 +125,7 @@ typedef struct aeEventLoop {
     long long timeEventNextId;
     // 最后一次执行事件的时间
     time_t lastTime;     /* Used to detect system clock skew */
-    // 已注册的事件
+    // 已注册的文件事件
     aeFileEvent *events; /* Registered events */
     // 已就绪的事件
     aeFiredEvent *fired; /* Fired events */

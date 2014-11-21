@@ -74,7 +74,7 @@ aeEventLoop *aeCreateEventLoop(int setsize) {
 
     // 事件处理器
     aeEventLoop *eventLoop;
-    // 循环事件计数器
+    // 循环计数器
     int i;
 
     // 创建事件处理器
@@ -147,38 +147,80 @@ int aeGetSetSize(aeEventLoop *eventLoop) {
  * performed at all.
  *
  * Otherwise AE_OK is returned and the operation is successful. */
+
+/*
+ * 重置事件处理器已追踪的最大文件描述符
+ * eventLoop 事件处理器指针
+ * setsize 已追踪的最大文件描述符
+ *
+ */
 int aeResizeSetSize(aeEventLoop *eventLoop, int setsize) {
+    // 循环计数器
     int i;
 
+    // 设置的最大文件描述符与当前事件处理器已追踪的最大文件描述符一致，返回成功状态
     if (setsize == eventLoop->setsize) return AE_OK;
+    // 已注册的最大文件描述符大于或等于 设置的最大文件描述符，返回失败状态
     if (eventLoop->maxfd >= setsize) return AE_ERR;
+    // 使用对应平台模块中的aeApiResize方法
     if (aeApiResize(eventLoop,setsize) == -1) return AE_ERR;
 
+    // 为已注册的文件事件重新分配内存
     eventLoop->events = zrealloc(eventLoop->events,sizeof(aeFileEvent)*setsize);
+    // 为已就绪的事件重新分配内存
     eventLoop->fired = zrealloc(eventLoop->fired,sizeof(aeFiredEvent)*setsize);
+    // 设置当前已追踪的最大文件描述符
     eventLoop->setsize = setsize;
 
     /* Make sure that if we created new slots, they are initialized with
      * an AE_NONE mask. */
+    // 初始化事件状态类型为未设置
     for (i = eventLoop->maxfd+1; i < setsize; i++)
         eventLoop->events[i].mask = AE_NONE;
+
+    // 返回成功状态
     return AE_OK;
 }
 
+/*
+ * 删除事件处理器
+ * eventLoop 事件处理器指针
+ *
+ */
 void aeDeleteEventLoop(aeEventLoop *eventLoop) {
+    // 使用对应平台模块中的aeApiFree方法
     aeApiFree(eventLoop);
+    // 释放已注册的文件事件
     zfree(eventLoop->events);
+    // 释放已就绪的事件
     zfree(eventLoop->fired);
+    // 释放整个事件处理器
     zfree(eventLoop);
 }
 
+/*
+ * 停止事件处理器
+ * eventLoop 事件处理器指针
+ *
+ */
 void aeStop(aeEventLoop *eventLoop) {
+    // 标记为停止状态
     eventLoop->stop = 1;
 }
 
+/*
+ * 创建文件事件
+ * eventLoop 事件处理器指针
+ * fd 事件文件描述符
+ * mask 事件类型掩码
+ * proc 文件事件方法
+ * clientData 复用库的私有数据
+ *
+ */
 int aeCreateFileEvent(aeEventLoop *eventLoop, int fd, int mask,
         aeFileProc *proc, void *clientData)
 {
+    //
     if (fd >= eventLoop->setsize) {
         errno = ERANGE;
         return AE_ERR;
