@@ -59,7 +59,7 @@
         // 包含kqueue接口模块(FreeBSD)
         #include "ae_kqueue.c"
         #else
-        // 包含select接口模块(Window)
+        // 包含select接口模块(Windows)
         #include "ae_select.c"
         #endif
     #endif
