@@ -75,6 +75,7 @@ list *listCreate(void)
 
 /*
  * 释放链表
+ *
  * list 链表指针
  *
  */
@@ -113,6 +114,7 @@ void listRelease(list *list)
 
 /*
  * 新建一个节点，值为value, 并添加到链表头
+ *
  * list 链表指针
  * value 值指针
  *
@@ -161,6 +163,7 @@ list *listAddNodeHead(list *list, void *value)
 
 /*
  * 新建一个节点，值为value, 并添加到链表尾
+ *
  * list 链表指针
  * value 值指针
  *
@@ -202,6 +205,7 @@ list *listAddNodeTail(list *list, void *value)
 
 /*
  * 在链表中插入节点
+ *
  * list 链表指针
  * old_node 目标节点指针
  * value 值指针
@@ -265,6 +269,7 @@ list *listInsertNode(list *list, listNode *old_node, void *value, int after) {
 
 /*
  * 在链表中删除节点
+ *
  * list 链表指针
  * node 节点指针
  *
@@ -304,6 +309,7 @@ void listDelNode(list *list, listNode *node)
 
 /*
  * 返回链表迭代器
+ *
  * list 链表指针
  * direction 迭代方向
  *
@@ -335,6 +341,7 @@ listIter *listGetIterator(list *list, int direction)
 
 /*
  * 释放链表迭代器
+ *
  * iter 链表迭代器指针
  *
  */
@@ -347,6 +354,7 @@ void listReleaseIterator(listIter *iter) {
 
 /*
  * 将迭代器的迭代指针倒回到链表头
+ *
  * list 链表指针
  * li 链表迭代器指针
  *
@@ -360,6 +368,7 @@ void listRewind(list *list, listIter *li) {
 
 /*
  * 将迭代器的迭代指针倒回到链表尾
+ *
  * list 链表指针
  * li 链表迭代器指针
  *
@@ -388,6 +397,7 @@ void listRewindTail(list *list, listIter *li) {
 
 /*
  * 使用链表迭代器访问下一个节点
+ *
  * iter 迭代器指针
  *
  */
@@ -422,6 +432,7 @@ listNode *listNext(listIter *iter)
 
 /*
  * 复制整个链表
+ *
  * orig 目标链表
  *
  */
@@ -498,6 +509,7 @@ list *listDup(list *orig)
 
 /*
  * 按节点值搜索链表
+ *
  * list 链表指针
  * key 值指针
  *
@@ -548,6 +560,7 @@ listNode *listSearchKey(list *list, void *key)
 
 /*
  * 按节点索引返回节点
+ *
  * list 链表指针
  * index 节点索引
  *
@@ -579,6 +592,7 @@ listNode *listIndex(list *list, long index) {
 
 /*
  * 分离链表的尾节点 将它设为新的头节点
+ *
  * list 链表指针
  *
  */

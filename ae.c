@@ -67,6 +67,7 @@
 
 /*
  * 创建事件处理器
+ *
  * setsize 已追踪的最大文件描述符
  *
  */
@@ -130,8 +131,10 @@ err:
 }
 
 /* Return the current set size. */
+
 /*
  * 获取当前已追踪的最大文件描述符
+ *
  * eventLoop 事件处理器指针
  *
  */
@@ -150,6 +153,7 @@ int aeGetSetSize(aeEventLoop *eventLoop) {
 
 /*
  * 重置事件处理器已追踪的最大文件描述符
+ *
  * eventLoop 事件处理器指针
  * setsize 已追踪的最大文件描述符
  *
@@ -184,6 +188,7 @@ int aeResizeSetSize(aeEventLoop *eventLoop, int setsize) {
 
 /*
  * 删除事件处理器
+ *
  * eventLoop 事件处理器指针
  *
  */
@@ -200,6 +205,7 @@ void aeDeleteEventLoop(aeEventLoop *eventLoop) {
 
 /*
  * 停止事件处理器
+ *
  * eventLoop 事件处理器指针
  *
  */
@@ -210,6 +216,7 @@ void aeStop(aeEventLoop *eventLoop) {
 
 /*
  * 创建文件事件
+ *
  * eventLoop 事件处理器指针
  * fd 事件文件描述符
  * mask 事件类型掩码
@@ -220,24 +227,45 @@ void aeStop(aeEventLoop *eventLoop) {
 int aeCreateFileEvent(aeEventLoop *eventLoop, int fd, int mask,
         aeFileProc *proc, void *clientData)
 {
-    //
+    // 事件文件描述符大于等于已追踪的最大文件描述符，返回错误号与错误状态
     if (fd >= eventLoop->setsize) {
         errno = ERANGE;
         return AE_ERR;
     }
+    
+    // 获取文件描述符对应的文件事件指针
     aeFileEvent *fe = &eventLoop->events[fd];
 
+    // 使用对应平台模块中的aeApiAddEvent方法，如果出错返回错误状态
     if (aeApiAddEvent(eventLoop, fd, mask) == -1)
         return AE_ERR;
+    
+    // 设置事件类型掩码
     fe->mask |= mask;
+    
+    // 文件事件状态可读时设置读文件方法
     if (mask & AE_READABLE) fe->rfileProc = proc;
+    // 文件事件状态可写时设置写文件方法
     if (mask & AE_WRITABLE) fe->wfileProc = proc;
+    // 设置复用库的私有数据
     fe->clientData = clientData;
+    
+    // 事件文件描述符大于当前已注册的最大文件描述符
     if (fd > eventLoop->maxfd)
+        // 将已注册的最大文件描述符设为当前事件文件描述符
         eventLoop->maxfd = fd;
+    
+    // 返回成功状态
     return AE_OK;
 }
 
+/*
+ * 删除文件事件
+ *
+ * eventLoop 事件处理器指针
+ * fd
+ * mask
+ */
 void aeDeleteFileEvent(aeEventLoop *eventLoop, int fd, int mask)
 {
     if (fd >= eventLoop->setsize) return;
