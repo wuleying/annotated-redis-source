@@ -414,25 +414,51 @@ long long aeCreateTimeEvent(aeEventLoop *eventLoop, long long milliseconds,
     return id;
 }
 
+/*
+ * 删除时间事件
+ *
+ * eventLoop 事件处理器指针
+ * id 时间事件ID
+ *
+ */
 int aeDeleteTimeEvent(aeEventLoop *eventLoop, long long id)
 {
+    // 时间事件，前驱
     aeTimeEvent *te, *prev = NULL;
 
+    // 获取事件事件头
     te = eventLoop->timeEventHead;
+    
+    // 遍历时间事件
     while(te) {
+        // 找到时间ID匹配的时间事件
         if (te->id == id) {
+            // 前驱为空
             if (prev == NULL)
+                // 将时间事件头设为下一个时间事件
                 eventLoop->timeEventHead = te->next;
             else
+                // 将前驱的后续设为此时间事件的后续
                 prev->next = te->next;
+            // 如果定义了时间事件释放方法
             if (te->finalizerProc)
+                // 使用自定义方法释放事件事件复用库的私有数据
                 te->finalizerProc(eventLoop, te->clientData);
+            
+            // 释放时间事件
             zfree(te);
+            
+            // 返回成功状态
             return AE_OK;
         }
+        
+        // 不匹配，将当前时间事件设为前驱
         prev = te;
+        // 处理下一个事件事件
         te = te->next;
     }
+    
+    // 遍历所有时间事件，没有匹配，返回错误状态
     return AE_ERR; /* NO event with the specified ID found */
 }
 
