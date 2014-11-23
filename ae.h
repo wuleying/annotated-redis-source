@@ -161,7 +161,7 @@ long long aeCreateTimeEvent(aeEventLoop *eventLoop, long long milliseconds,
 int aeDeleteTimeEvent(aeEventLoop *eventLoop, long long id);
 // 处理所有已到达的时间事件以及所有已就绪的文件事件
 int aeProcessEvents(aeEventLoop *eventLoop, int flags);
-// 等待n毫秒
+// 等待milliseconds毫秒
 int aeWait(int fd, int mask, long long milliseconds);
 // 事件处理器主循环
 void aeMain(aeEventLoop *eventLoop);
