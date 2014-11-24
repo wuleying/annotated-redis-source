@@ -580,7 +580,7 @@ static int processTimeEvents(aeEventLoop *eventLoop) {
             // 获取当前处理的时间事件ID
             id = te->id;
             
-            // 调用时间事件处理方法，返回-1或一个整数，大于-1时表示这个事件需要循环片理
+            // 调用时间事件处理方法，返回-1或一个整数，大于-1时表示这个事件需要循环处理
             retval = te->timeProc(eventLoop, id, te->clientData);
             
             // 已处理的事件计数器加1

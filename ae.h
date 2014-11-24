@@ -133,7 +133,7 @@ typedef struct aeEventLoop {
     aeTimeEvent *timeEventHead;
     // 终止/启动事件
     int stop;
-    // 轮询API数据
+    // 事件轮询API数据
     void *apidata; /* This is used for polling API specific data */
     // 事件处理前的sleep方法
     aeBeforeSleepProc *beforesleep;
