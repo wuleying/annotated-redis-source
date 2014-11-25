@@ -1,5 +1,5 @@
 /* ae.c module for illumos event ports.
- * 事件驱动模块 事件端口(Illumos)
+ * Illumos平台事件触发库底层实现
  *
  * Copyright (c) 2012, Joyent, Inc. All rights reserved.
  *
@@ -39,6 +39,7 @@
 
 #include <stdio.h>
 
+// evport调试开关
 static int evport_debug = 0;
 
 /*
@@ -64,8 +65,11 @@ static int evport_debug = 0;
  * and only until we enter aeApiPoll again (at which point we restore the
  * in-kernel association).
  */
+
+// 处理事件的最大批次
 #define MAX_EVENT_BATCHSZ 512
 
+// 作为事件处理器的apidata存储结构
 typedef struct aeApiState {
     int     portfd;                             /* event port */
     int     npending;                           /* # of pending fds */
@@ -316,6 +320,10 @@ static int aeApiPoll(aeEventLoop *eventLoop, struct timeval *tvp) {
     return nevents;
 }
 
+/*
+ * 返回所使用的复用库的名称
+ *
+ */
 static char *aeApiName(void) {
     return "evport";
 }
