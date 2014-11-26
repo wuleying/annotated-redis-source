@@ -1,4 +1,5 @@
 /* SDSLib, A C dynamic strings library
+ * 动态字符串库
  *
  * Copyright (c) 2006-2010, Salvatore Sanfilippo <antirez at gmail dot com>
  * All rights reserved.
@@ -31,18 +32,25 @@
 #ifndef __SDS_H
 #define __SDS_H
 
+// 动态字符串最大的预分配长度1M
 #define SDS_MAX_PREALLOC (1024*1024)
 
 #include <sys/types.h>
 #include <stdarg.h>
 
+// 动态字符串类型，定义为char *，是后续绝大部分函数的参数
 typedef char *sds;
 
+// 动态字符串数据结构
 struct sdshdr {
+    // 长度
     unsigned int len;
+    // 空闲字节
     unsigned int free;
+    // 指向实际存储数据buf的指针(C99 flexible array member)
     char buf[];
 };
+
 
 static inline size_t sdslen(const sds s) {
     struct sdshdr *sh = (void*)(s-(sizeof(struct sdshdr)));
