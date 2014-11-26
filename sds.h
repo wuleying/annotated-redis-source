@@ -51,23 +51,45 @@ struct sdshdr {
     char buf[];
 };
 
-
+/*
+ * 获取动态字符串buf已占用长度
+ *
+ * s 动态字符串
+ *
+ */
 static inline size_t sdslen(const sds s) {
+    // 获取动态字符串指针
     struct sdshdr *sh = (void*)(s-(sizeof(struct sdshdr)));
+    // 返回长度
     return sh->len;
 }
 
+/*
+ * 获取动态字符串空闲字节
+ *
+ * s 动态字符串
+ *
+ */
 static inline size_t sdsavail(const sds s) {
+    // 获取动态字符串指针
     struct sdshdr *sh = (void*)(s-(sizeof(struct sdshdr)));
+    // 返回空闲字节
     return sh->free;
 }
 
+// 创建一个指定长度的动态字符串
 sds sdsnewlen(const void *init, size_t initlen);
+// 根据给定值创建一个动态字符串
 sds sdsnew(const char *init);
+// 创建一个空动态字符串，长度为0
 sds sdsempty(void);
+// 获取动态字符串buf已占用长度
 size_t sdslen(const sds s);
+// 复制给定的动态字符串
 sds sdsdup(const sds s);
+// 释放动态字符串
 void sdsfree(sds s);
+// 获取动态字符串空闲字节
 size_t sdsavail(const sds s);
 sds sdsgrowzero(sds s, size_t len);
 sds sdscatlen(sds s, const void *t, size_t len);
@@ -87,6 +109,7 @@ sds sdscatprintf(sds s, const char *fmt, ...);
 sds sdscatfmt(sds s, char const *fmt, ...);
 sds sdstrim(sds s, const char *cset);
 void sdsrange(sds s, int start, int end);
+// 更新动态字符串长度
 void sdsupdatelen(sds s);
 void sdsclear(sds s);
 int sdscmp(const sds s1, const sds s2);

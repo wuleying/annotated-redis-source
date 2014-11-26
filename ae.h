@@ -37,7 +37,7 @@
 // 事件执行状态 成功
 #define AE_OK 0
 // 事件执行状态 失败
-#define AE_ERR -1
+#define AE_ERR -1/Users/hxsd/github/annotated-redis-source/annotated-redis-source/sds.h
 
 // 文件事件状态 未设置
 #define AE_NONE 0

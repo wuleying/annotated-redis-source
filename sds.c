@@ -1,4 +1,5 @@
 /* SDSLib, A C dynamic strings library
+ * 动态字符串库
  *
  * Copyright (c) 2006-2012, Salvatore Sanfilippo <antirez at gmail dot com>
  * All rights reserved.
@@ -48,43 +49,97 @@
  * You can print the string with printf() as there is an implicit \0 at the
  * end of the string. However the string is binary safe and can contain
  * \0 characters in the middle, as the length is stored in the sds header. */
+
+/*
+ * 创建一个指定长度的动态字符串
+ *
+ * init 如果指定了init，init将被复制到动态字符串的buf中
+ * initlen 动态字符串长度
+ *
+ */
 sds sdsnewlen(const void *init, size_t initlen) {
+    // 动态字符串指针
     struct sdshdr *sh;
 
     if (init) {
+        // 分配空间，不初始化内存
         sh = zmalloc(sizeof(struct sdshdr)+initlen+1);
     } else {
+        // 分配空间，初始化内存
         sh = zcalloc(sizeof(struct sdshdr)+initlen+1);
     }
+    
+    // 分配内存失败，返回NULL
     if (sh == NULL) return NULL;
+    
+    // 设置动态字符串长度
     sh->len = initlen;
+    // 设置动态字符串空闲字节
     sh->free = 0;
+    
+    // 如果动态字符串长度不为0并且指定了init，将init的内容复制到buf中
     if (initlen && init)
         memcpy(sh->buf, init, initlen);
+    
+    // 添加字符串终止符
     sh->buf[initlen] = '\0';
+    
+    // 返回动态字符串buf
     return (char*)sh->buf;
 }
 
 /* Create an empty (zero length) sds string. Even in this case the string
  * always has an implicit null term. */
+
+/*
+ * 创建一个空动态字符串，长度为0
+ *
+ */
 sds sdsempty(void) {
+    // 注意“”字符串不代表空，但0表示空
     return sdsnewlen("",0);
 }
 
 /* Create a new sds string starting from a null termined C string. */
+
+/*
+ * 根据给定值创建一个动态字符串
+ *
+ * init 给定值，字符串指针
+ *
+ */
 sds sdsnew(const char *init) {
+    // 获取字符串长度
     size_t initlen = (init == NULL) ? 0 : strlen(init);
+    // 创建动态字符串
     return sdsnewlen(init, initlen);
 }
 
 /* Duplicate an sds string. */
+
+/*
+ * 复制给定的动态字符串
+ *
+ * s 动态字符串
+ *
+ */
 sds sdsdup(const sds s) {
+    // 根据给定的字符串重新创建一个动态字符串
     return sdsnewlen(s, sdslen(s));
 }
 
 /* Free an sds string. No operation is performed if 's' is NULL. */
+
+/*
+ * 释放动态字符串
+ *
+ * s 动态字符串
+ *
+ */
 void sdsfree(sds s) {
+    // 动态字符串为空，直接返回
     if (s == NULL) return;
+    // 释放动态字符串内存
     zfree(s-sizeof(struct sdshdr));
 }
 
@@ -102,10 +157,21 @@ void sdsfree(sds s) {
  * The output will be "2", but if we comment out the call to sdsupdatelen()
  * the output will be "6" as the string was modified but the logical length
  * remains 6 bytes. */
+
+/*
+ * 更新动态字符串长度
+ *
+ * s 动态字符串
+ *
+ */
 void sdsupdatelen(sds s) {
+    // 获取动态字符串指针
     struct sdshdr *sh = (void*) (s-(sizeof(struct sdshdr)));
+    // 获取动态字符串实际长度
     int reallen = strlen(s);
+    // 更新空闲字节
     sh->free += (sh->len-reallen);
+    // 更新长度
     sh->len = reallen;
 }
 
@@ -126,6 +192,14 @@ void sdsclear(sds s) {
  *
  * Note: this does not change the *length* of the sds string as returned
  * by sdslen(), but only the free buffer space we have. */
+
+/*
+ * 
+ *
+ * s 动态字符串
+ * addlen
+ *
+ */
 sds sdsMakeRoomFor(sds s, size_t addlen) {
     struct sdshdr *sh, *newsh;
     size_t free = sdsavail(s);
