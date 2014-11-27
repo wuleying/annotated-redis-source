@@ -43,7 +43,7 @@ typedef char *sds;
 
 // 动态字符串数据结构
 struct sdshdr {
-    // 长度
+    // 已使用字节
     unsigned int len;
     // 空闲字节
     unsigned int free;
@@ -91,11 +91,17 @@ sds sdsdup(const sds s);
 void sdsfree(sds s);
 // 获取动态字符串空闲字节
 size_t sdsavail(const sds s);
+// 对动态字符串的buf进行扩展，扩展长度为len，无内容部分用\0填充
 sds sdsgrowzero(sds s, size_t len);
+// 按长度len扩展动态字符串，并将t拼接到末尾
 sds sdscatlen(sds s, const void *t, size_t len);
+// 将一个C字符串拼接到动态字符串末尾
 sds sdscat(sds s, const char *t);
+// 拼接两个动态字符串，t添加到s末尾
 sds sdscatsds(sds s, const sds t);
+// 将一个C字符串的前len个字节复制到动态字符串
 sds sdscpylen(sds s, const char *t, size_t len);
+// 将一个C字符串复制到动态字符串
 sds sdscpy(sds s, const char *t);
 
 sds sdscatvprintf(sds s, const char *fmt, va_list ap);
@@ -124,9 +130,14 @@ sds sdsmapchars(sds s, const char *from, const char *to, size_t setlen);
 sds sdsjoin(char **argv, int argc, char *sep);
 
 /* Low level functions exposed to the user API */
+
+// 对动态字符串的buf进行扩展，扩展长度不小于addlen
 sds sdsMakeRoomFor(sds s, size_t addlen);
+// 在动态字符串buf右边加incr个位置，如果incr为负数，会截短bufs
 void sdsIncrLen(sds s, int incr);
+// 释放动态字符串buf的多余空间，并且不改动buf内容
 sds sdsRemoveFreeSpace(sds s);
+// 计算动态字符串buf占用的内存长度
 size_t sdsAllocSize(sds s);
 
 #endif

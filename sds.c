@@ -194,29 +194,50 @@ void sdsclear(sds s) {
  * by sdslen(), but only the free buffer space we have. */
 
 /*
- * 
+ * 对动态字符串的buf进行扩展，扩展长度不小于addlen
  *
  * s 动态字符串
- * addlen
+ * addlen 扩展长度
  *
  */
 sds sdsMakeRoomFor(sds s, size_t addlen) {
+    // 初始化动态字符串指针
     struct sdshdr *sh, *newsh;
+    // 获取动态字符串空闲字节
     size_t free = sdsavail(s);
+    // 初始化当前buf长度和新的buf长度
     size_t len, newlen;
 
+    // 如果空闲字节大于需要扩展的字节数，表示剩余空间可以满足需求，直接返回
     if (free >= addlen) return s;
+    
+    // 获取当前buf长度
     len = sdslen(s);
+    
+    // 获取动态字符串指针
     sh = (void*) (s-(sizeof(struct sdshdr)));
+    
+    // 获取新buf长度
     newlen = (len+addlen);
+    
+    // 扩展后的占用空间大于最大的预分配长度时
     if (newlen < SDS_MAX_PREALLOC)
+        // 将新buf长度乘2
         newlen *= 2;
     else
+        // 新buf长度加上最大预分配长度
         newlen += SDS_MAX_PREALLOC;
+    
+    // 给扩展后的动态字符串重新分配内存
     newsh = zrealloc(sh, sizeof(struct sdshdr)+newlen+1);
+    
+    // 内存分配失败 返回NULL
     if (newsh == NULL) return NULL;
 
+    // 计算空闲空间
     newsh->free = newlen - len;
+    
+    // 返回扩展后的buf
     return newsh->buf;
 }
 
@@ -226,12 +247,24 @@ sds sdsMakeRoomFor(sds s, size_t addlen) {
  *
  * After the call, the passed sds string is no longer valid and all the
  * references must be substituted with the new pointer returned by the call. */
+
+/*
+ * 释放动态字符串buf的多余空间，并且不改动buf内容
+ *
+ * s 动态字符串
+ *
+ */
 sds sdsRemoveFreeSpace(sds s) {
+    // 初始化动态字符串指针
     struct sdshdr *sh;
 
+    // 获取动态字符串指针
     sh = (void*) (s-(sizeof(struct sdshdr)));
+    // 重新分配内存 buf长度为sh-len+1
     sh = zrealloc(sh, sizeof(struct sdshdr)+sh->len+1);
+    // 空闲空间设为0，因为多余空间已经释放
     sh->free = 0;
+    // 返回buf
     return sh->buf;
 }
 
@@ -242,9 +275,17 @@ sds sdsRemoveFreeSpace(sds s) {
  * 3) The free buffer at the end if any.
  * 4) The implicit null term.
  */
-size_t sdsAllocSize(sds s) {
-    struct sdshdr *sh = (void*) (s-(sizeof(struct sdshdr)));
 
+/*
+ * 计算动态字符串buf占用的内存长度
+ *
+ * s 动态字符串
+ *
+ */
+size_t sdsAllocSize(sds s) {
+    // 获取动态字符串指针
+    struct sdshdr *sh = (void*) (s-(sizeof(struct sdshdr)));
+    // 返回buf占用的内存长度，包括已使用与空闲空间
     return sizeof(*sh)+sh->len+sh->free+1;
 }
 
@@ -271,15 +312,32 @@ size_t sdsAllocSize(sds s) {
  * ... check for nread <= 0 and handle it ...
  * sdsIncrLen(s, nread);
  */
+
+/*
+ * 在动态字符串buf右边加incr个位置，如果incr为负数，会截短buf
+ *
+ * s 动态字符串
+ * incr 扩展/截短字节数
+ *
+ */
 void sdsIncrLen(sds s, int incr) {
+    // 获取动态字符串指针
     struct sdshdr *sh = (void*) (s-(sizeof(struct sdshdr)));
 
+    // 正数
     if (incr >= 0)
+        // 空闲节节数必须大于等于扩展字节数
         assert(sh->free >= (unsigned int)incr);
+    // 负数
     else
+        // 已使用字节数必须大于等于截短字节数
         assert(sh->len >= (unsigned int)(-incr));
+    
+    // 重新计算动态字符串已使用字节数
     sh->len += incr;
+    // 重新计算动态字符串空闲字节数
     sh->free -= incr;
+    // 在已使用部分最后加上终止符
     s[sh->len] = '\0';
 }
 
@@ -288,20 +346,40 @@ void sdsIncrLen(sds s, int incr) {
  *
  * if the specified length is smaller than the current length, no operation
  * is performed. */
+
+/*
+ * 对动态字符串的buf进行扩展，扩展长度为len，无内容部分用\0填充
+ *
+ * s 动态字符串
+ * len 扩展字节数
+ *
+ */
 sds sdsgrowzero(sds s, size_t len) {
+    // 获取动态字符串指针
     struct sdshdr *sh = (void*)(s-(sizeof(struct sdshdr)));
+    // 初始化扩展后分配的字节数，包括已使用与空闲
+    // 获取当前已使用的字节数
     size_t totlen, curlen = sh->len;
 
+    // 扩展后的已使用字节数小于当前已使用字节数，直接返回
     if (len <= curlen) return s;
+    // 对动态字符串的buf进行扩展，扩展长度为给定的扩展长度减去当前已使用字节数
     s = sdsMakeRoomFor(s,len-curlen);
+    // 内存分配失败，返回NULL
     if (s == NULL) return NULL;
 
     /* Make sure added region doesn't contain garbage */
+    // 重新获取动态字符串指针
     sh = (void*)(s-(sizeof(struct sdshdr)));
+    // 使用\0填充空位，确保添加的区域不包含垃圾
     memset(s+curlen,0,(len-curlen+1)); /* also set trailing \0 byte */
+    // 计算所有分配的字节数
     totlen = sh->len+sh->free;
+    // 设置动态字符串已使用字节数
     sh->len = len;
+    // 设置动态字符串空闲字节数
     sh->free = totlen-sh->len;
+    // 返回动态字符串
     return s;
 }
 
@@ -310,17 +388,36 @@ sds sdsgrowzero(sds s, size_t len) {
  *
  * After the call, the passed sds string is no longer valid and all the
  * references must be substituted with the new pointer returned by the call. */
+
+/*
+ * 按长度len扩展动态字符串，并将t拼接到末尾
+ *
+ * s 动态字符串
+ * t 要拼接的字符串
+ * len 扩展长度
+ *
+ */
 sds sdscatlen(sds s, const void *t, size_t len) {
+    // 初始化动态字符串指针
     struct sdshdr *sh;
+    // 获取当前已使用的字节数
     size_t curlen = sdslen(s);
 
+    // 对动态字符串的buf进行扩展，扩展长度为len
     s = sdsMakeRoomFor(s,len);
+    // 内存分配失败，返回NULL
     if (s == NULL) return NULL;
+    // 获取动态字符串指针
     sh = (void*) (s-(sizeof(struct sdshdr)));
+    // 使用t填充到动态字符串末尾
     memcpy(s+curlen, t, len);
+    // 设置动态字符串已使用字节数
     sh->len = curlen+len;
+    // 设置动态字符串空闲字节数
     sh->free = sh->free-len;
+    // 最后加上终止符
     s[curlen+len] = '\0';
+    // 返回动态字符串
     return s;
 }
 
@@ -328,7 +425,16 @@ sds sdscatlen(sds s, const void *t, size_t len) {
  *
  * After the call, the passed sds string is no longer valid and all the
  * references must be substituted with the new pointer returned by the call. */
+
+/*
+ * 将一个C字符串拼接到动态字符串末尾
+ *
+ * s 动态字符串
+ * t 要拼接的C字符串
+ *
+ */
 sds sdscat(sds s, const char *t) {
+    // 将C字符串拼接到动态字符串末尾
     return sdscatlen(s, t, strlen(t));
 }
 
@@ -336,32 +442,71 @@ sds sdscat(sds s, const char *t) {
  *
  * After the call, the modified sds string is no longer valid and all the
  * references must be substituted with the new pointer returned by the call. */
+
+/*
+ * 拼接两个动态字符串，t添加到s末尾
+ *
+ * s 动态字符串
+ * t 要拼接的动态字符串
+ *
+ */
 sds sdscatsds(sds s, const sds t) {
+    // 将t添加到s末尾
     return sdscatlen(s, t, sdslen(t));
 }
 
 /* Destructively modify the sds string 's' to hold the specified binary
  * safe string pointed by 't' of length 'len' bytes. */
+
+/*
+ * 将一个C字符串的前len个字节复制到动态字符串
+ *
+ * s 动态字符串
+ * t 要拼接的C字符串
+ * len 要复制的字节数
+ *
+ */
 sds sdscpylen(sds s, const char *t, size_t len) {
+    // 获取动态字符串指针
     struct sdshdr *sh = (void*) (s-(sizeof(struct sdshdr)));
+    // 获取动态字符串之前分配的字节数 空闲+已使用
     size_t totlen = sh->free+sh->len;
 
+    // 如果要复制的字节数大于动态字符串之前分配的字节数
     if (totlen < len) {
+        // 对动态字符串的buf进行扩展，扩容大小为要复制的字节数减去之前已使用的字节数
         s = sdsMakeRoomFor(s,len-sh->len);
+        // 分配内存失败，返回NULL
         if (s == NULL) return NULL;
+        // 重新获取动态字符串指针
         sh = (void*) (s-(sizeof(struct sdshdr)));
+        // 获取扩展后的动态字符串分配的总字节数
         totlen = sh->free+sh->len;
     }
+    // 将字符串的前len个字节复制到动态字符串
     memcpy(s, t, len);
+    // 动态字符串最后加上终止符
     s[len] = '\0';
+    // 设置动态字符串已使用字节数
     sh->len = len;
+    // 设置动态字符串空闲字节数
     sh->free = totlen-len;
+    // 返回动态字符串
     return s;
 }
 
 /* Like sdscpylen() but 't' must be a null-termined string so that the length
  * of the string is obtained with strlen(). */
+
+/*
+ * 将一个C字符串复制到动态字符串
+ *
+ * s 动态字符串
+ * t 要拼接的C字符串
+ *
+ */
 sds sdscpy(sds s, const char *t) {
+    // 将一个字符串复制到动态字符串
     return sdscpylen(s, t, strlen(t));
 }
 
@@ -371,7 +516,15 @@ sds sdscpy(sds s, const char *t) {
  *
  * The function returns the lenght of the null-terminated string
  * representation stored at 's'. */
+
+//
 #define SDS_LLSTR_SIZE 21
+
+/*
+ *
+ *
+ *
+ */
 int sdsll2str(char *s, long long value) {
     char *p, aux;
     unsigned long long v;
@@ -1036,6 +1189,10 @@ sds sdsjoin(char **argv, int argc, char *sep) {
     return join;
 }
 
+/*
+ * 测试方法集
+ *
+ */
 #ifdef SDS_TEST_MAIN
 #include <stdio.h>
 #include "testhelp.h"
