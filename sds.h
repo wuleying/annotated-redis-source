@@ -52,7 +52,7 @@ struct sdshdr {
 };
 
 /*
- * 获取动态字符串buf已占用长度
+ * 获取动态字符串buf已使用字节数
  *
  * s 动态字符串
  *
@@ -83,7 +83,7 @@ sds sdsnewlen(const void *init, size_t initlen);
 sds sdsnew(const char *init);
 // 创建一个空动态字符串，长度为0
 sds sdsempty(void);
-// 获取动态字符串buf已占用长度
+// 获取动态字符串buf已使用字节数
 size_t sdslen(const sds s);
 // 复制给定的动态字符串
 sds sdsdup(const sds s);
@@ -112,6 +112,7 @@ sds sdscatprintf(sds s, const char *fmt, ...)
 sds sdscatprintf(sds s, const char *fmt, ...);
 #endif
 
+// 格式化输出动态字符串
 sds sdscatfmt(sds s, char const *fmt, ...);
 sds sdstrim(sds s, const char *cset);
 void sdsrange(sds s, int start, int end);

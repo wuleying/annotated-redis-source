@@ -517,14 +517,7 @@ sds sdscpy(sds s, const char *t) {
  * The function returns the lenght of the null-terminated string
  * representation stored at 's'. */
 
-//
 #define SDS_LLSTR_SIZE 21
-
-/*
- *
- *
- *
- */
 int sdsll2str(char *s, long long value) {
     char *p, aux;
     unsigned long long v;
@@ -675,10 +668,23 @@ sds sdscatprintf(sds s, const char *fmt, ...) {
  * %U - 64 bit unsigned integer (unsigned long long, uint64_t)
  * %% - Verbatim "%" character.
  */
+
+/*
+ * 格式化输出动态字符串
+ *
+ * s 动态字符串
+ * fmt 输出格式
+ * ... 输出参数
+ *
+ */
 sds sdscatfmt(sds s, char const *fmt, ...) {
+    // 获取动态字符串指针
     struct sdshdr *sh = (void*) (s-(sizeof(struct sdshdr)));
+    // 获取动态节符串buf已使用的字节数
     size_t initlen = sdslen(s);
+    // 输出格式
     const char *f = fmt;
+    // 循环计数器
     int i;
     va_list ap;
 
