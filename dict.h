@@ -1,4 +1,5 @@
 /* Hash Tables Implementation.
+ * 哈希表(字典)
  *
  * This file implements in-memory hash tables with insert/del/replace/find/
  * get-random-element operations. Hash tables will auto-resize if needed
@@ -38,46 +39,76 @@
 #ifndef __DICT_H
 #define __DICT_H
 
+// 操作返回状态 成功
 #define DICT_OK 0
+// 操作返回状态 失败
 #define DICT_ERR 1
 
 /* Unused arguments generate annoying warnings... */
+// 编译时参数未使用产生了警告，直接忽略
 #define DICT_NOTUSED(V) ((void) V)
 
+// 字典节点结构体
 typedef struct dictEntry {
+    // 键
     void *key;
+    // 值
     union {
+        // 指针类型
         void *val;
+        // 无符号整型
         uint64_t u64;
+        // 有符号整型
         int64_t s64;
+        // 浮点型
         double d;
     } v;
+    // 后续节点
     struct dictEntry *next;
 } dictEntry;
 
+// 字典特定类型的一组处理函数
 typedef struct dictType {
+    // 计算键的哈希值函数，不同的字典可以有不同的hashFunction
     unsigned int (*hashFunction)(const void *key);
+    // 复制键的函数
     void *(*keyDup)(void *privdata, const void *key);
+    // 复制值的函数
     void *(*valDup)(void *privdata, const void *obj);
+    // 对比两个键的函数
     int (*keyCompare)(void *privdata, const void *key1, const void *key2);
+    // 键的析构函数
     void (*keyDestructor)(void *privdata, void *key);
+    // 值的析构函数
     void (*valDestructor)(void *privdata, void *obj);
 } dictType;
 
 /* This is our hash table structure. Every dictionary has two of this as we
  * implement incremental rehashing, for the old to the new table. */
+
+// 字典哈希表结构体
 typedef struct dictht {
+    // 哈希表节点指针数组(Bucket)
     dictEntry **table;
+    // 指针数组的大小
     unsigned long size;
+    // 指针数组的长度，用来计算索引值
     unsigned long sizemask;
+    // 字典已有的节点数量
     unsigned long used;
 } dictht;
 
+// 字典结构体
 typedef struct dict {
+    // 特定类型的处理函数组
     dictType *type;
+    // 处理函数的私有数据
     void *privdata;
+    // 使用两个字典哈希表，用于实现渐进式rehash
     dictht ht[2];
+    // rehash进度，-1表未未进行
     long rehashidx; /* rehashing not in progress if rehashidx == -1 */
+    // 正在运行的安全迭代器数量
     int iterators; /* number of iterators currently running */
 } dict;
 
@@ -85,25 +116,40 @@ typedef struct dict {
  * dictAdd, dictFind, and other functions against the dictionary even while
  * iterating. Otherwise it is a non safe iterator, and only dictNext()
  * should be called while iterating. */
+
+// 字典迭代器
 typedef struct dictIterator {
+    // 字典
     dict *d;
+    // 正在迭代的哈希表的代码(0或1)
     long index;
+    // table 正在迭代的哈希表的数组索引
+    // safe 是否是安全迭代器 不安全的迭代器只可调用dictNext方法
     int table, safe;
+    // entry 当前哈希节点
+    // nextEntry 后续哈希节点
     dictEntry *entry, *nextEntry;
     /* unsafe iterator fingerprint for misuse detection. */
+    // 指纹标识，防止滥用非安全迭代器
     long long fingerprint;
 } dictIterator;
 
+// 字典的遍历方法
 typedef void (dictScanFunction)(void *privdata, const dictEntry *de);
 
 /* This is the initial size of every hash table */
+// 哈希表的初始大小
 #define DICT_HT_INITIAL_SIZE     4
 
 /* ------------------------------- Macros ------------------------------------*/
+
+/* 宏 */
+// 释放字典节点值，如果定义了valDestructor函数指针，则执行此函数
 #define dictFreeVal(d, entry) \
     if ((d)->type->valDestructor) \
         (d)->type->valDestructor((d)->privdata, (entry)->v.val)
 
+// 设置字典节点值，如果定义了valDup函数值针，则执行此函数
 #define dictSetVal(d, entry, _val_) do { \
     if ((d)->type->valDup) \
         entry->v.val = (d)->type->valDup((d)->privdata, _val_); \
@@ -111,19 +157,24 @@ typedef void (dictScanFunction)(void *privdata, const dictEntry *de);
         entry->v.val = (_val_); \
 } while(0)
 
+// 设置字典节点的整型值
 #define dictSetSignedIntegerVal(entry, _val_) \
     do { entry->v.s64 = _val_; } while(0)
 
+// 设置字典节点的无符号整型值
 #define dictSetUnsignedIntegerVal(entry, _val_) \
     do { entry->v.u64 = _val_; } while(0)
 
+// 设置字典节点的浮点型值
 #define dictSetDoubleVal(entry, _val_) \
     do { entry->v.d = _val_; } while(0)
 
+// 析构字典节点的key，如果定义了keyDestructor函数指针，则执行此函数
 #define dictFreeKey(d, entry) \
     if ((d)->type->keyDestructor) \
         (d)->type->keyDestructor((d)->privdata, (entry)->key)
 
+// 设置字典节点的key，如果定义了keyDup函数指针，则执行此函数
 #define dictSetKey(d, entry, _key_) do { \
     if ((d)->type->keyDup) \
         entry->key = (d)->type->keyDup((d)->privdata, _key_); \
@@ -131,19 +182,29 @@ typedef void (dictScanFunction)(void *privdata, const dictEntry *de);
         entry->key = (_key_); \
 } while(0)
 
+// 比较字典中两个节点的key，如果定义了keyCompare函数指针，则执行此函数
 #define dictCompareKeys(d, key1, key2) \
     (((d)->type->keyCompare) ? \
         (d)->type->keyCompare((d)->privdata, key1, key2) : \
         (key1) == (key2))
 
+// 查找字典中key对应的节点
 #define dictHashKey(d, key) (d)->type->hashFunction(key)
+// 获取字典节点的key
 #define dictGetKey(he) ((he)->key)
+// 获取字典节点的值
 #define dictGetVal(he) ((he)->v.val)
+// 获取字典节点的整型值
 #define dictGetSignedIntegerVal(he) ((he)->v.s64)
+// 获取字典节点的无符号整型值
 #define dictGetUnsignedIntegerVal(he) ((he)->v.u64)
+// 获取字典节点的浮点型值
 #define dictGetDoubleVal(he) ((he)->v.d)
+// 获取字典分配的指针数组的大小总合
 #define dictSlots(d) ((d)->ht[0].size+(d)->ht[1].size)
+// 获取字典已有的节点数量总合
 #define dictSize(d) ((d)->ht[0].used+(d)->ht[1].used)
+// 字典是否正在rehash
 #define dictIsRehashing(d) ((d)->rehashidx != -1)
 
 /* API */
