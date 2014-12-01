@@ -166,6 +166,12 @@ static void _dictReset(dictht *ht)
 }
 
 /* Create a new hash table */
+
+/*
+ * 创建一个字典
+ *
+ *
+ */
 dict *dictCreate(dictType *type,
         void *privDataPtr)
 {
