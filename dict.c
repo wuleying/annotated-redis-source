@@ -157,11 +157,22 @@ unsigned int dictGenCaseHashFunction(const unsigned char *buf, int len) {
 
 /* Reset a hash table already initialized with ht_init().
  * NOTE: This function should only be called by ht_destroy(). */
+
+/*
+ * 重置字典哈希表属性
+ *
+ * ht 字典哈希表指针
+ *
+ */
 static void _dictReset(dictht *ht)
 {
+    // Bucket置空
     ht->table = NULL;
+    // 指针数组大小设为0
     ht->size = 0;
+    // 指针数组长度设为0
     ht->sizemask = 0;
+    // 已有的节点数量设为0
     ht->used = 0;
 }
 
@@ -169,35 +180,65 @@ static void _dictReset(dictht *ht)
 
 /*
  * 创建一个字典
- *
+ * 
+ * type 字典特定类型的处理函数
+ * privDataPtr 处理函数的私有数据
  *
  */
 dict *dictCreate(dictType *type,
         void *privDataPtr)
 {
+    // 分配空间
     dict *d = zmalloc(sizeof(*d));
 
+    // 初始化字典
     _dictInit(d,type,privDataPtr);
+    
+    // 返回字典指针
     return d;
 }
 
 /* Initialize the hash table */
+
+/*
+ * 初始化字典
+ *
+ * d 字典指针
+ * type 字典特定类型的处理函数
+ * privDataPtr 处理函数的私有数据
+ *
+ */
 int _dictInit(dict *d, dictType *type,
         void *privDataPtr)
 {
+    // 初始化ht[0]
     _dictReset(&d->ht[0]);
+    // 初始化ht[1]
     _dictReset(&d->ht[1]);
+    // 设置字典特定类型的处理函数
     d->type = type;
+    // 设置处理函数的私有数据
     d->privdata = privDataPtr;
+    // rehash进度设为未进行
     d->rehashidx = -1;
+    // 设置正在运行的安全迭代器数量
     d->iterators = 0;
+    // 返回成功状态
     return DICT_OK;
 }
 
 /* Resize the table to the minimal size that contains all the elements,
  * but with the invariant of a USED/BUCKETS ratio near to <= 1 */
+
+/*
+ * 调整字典大小，让已有节点数与Bucket比率接近<=1
+ *
+ * d 字典指针
+ *
+ */
 int dictResize(dict *d)
 {
+    // 
     int minimal;
 
     if (!dict_can_resize || dictIsRehashing(d)) return DICT_ERR;
