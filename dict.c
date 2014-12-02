@@ -231,20 +231,27 @@ int _dictInit(dict *d, dictType *type,
  * but with the invariant of a USED/BUCKETS ratio near to <= 1 */
 
 /*
- * 调整字典大小，让已有节点数与Bucket比率接近<=1
+ * 调整字典大小，让已有节点数与Bucket比率尽量接近小于等于1
  *
  * d 字典指针
  *
  */
 int dictResize(dict *d)
 {
-    // 
+    // 字典最小大小
     int minimal;
 
+    // 不能在dict_can_resize为假或是字典正rehash时调整字典大小
     if (!dict_can_resize || dictIsRehashing(d)) return DICT_ERR;
+    
+    // 字典最小为ht[0]已有的节点数量
     minimal = d->ht[0].used;
+    
+    // 最小小于哈希表的初始大小，将最小值设为哈希表的初始大小
     if (minimal < DICT_HT_INITIAL_SIZE)
         minimal = DICT_HT_INITIAL_SIZE;
+    
+    // 调整字典大小
     return dictExpand(d, minimal);
 }
 
