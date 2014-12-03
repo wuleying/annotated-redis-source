@@ -256,32 +256,57 @@ int dictResize(dict *d)
 }
 
 /* Expand or create the hash table */
+
+/*
+ * 扩展或创建字典
+ *
+ * d 字典指针
+ * size 字典增加的节点数量
+ *
+ */
 int dictExpand(dict *d, unsigned long size)
 {
+    // 一个新字典哈希表
     dictht n; /* the new hash table */
+    
+    // 计算字典的真实大小
     unsigned long realsize = _dictNextPower(size);
 
     /* the size is invalid if it is smaller than the number of
      * elements already inside the hash table */
+    
+    // 字典正在rehash或字典ht[0]已有的节点数量大于增加的节点数量，返回错误状态
     if (dictIsRehashing(d) || d->ht[0].used > size)
         return DICT_ERR;
 
     /* Allocate the new hash table and initialize all pointers to NULL */
+    // 设置字典哈希表指针数组大小
     n.size = realsize;
+    // 设置字典哈希表指针数组长度
     n.sizemask = realsize-1;
+    // 为字典哈希表Bucket分配内存空间
     n.table = zcalloc(realsize*sizeof(dictEntry*));
+    // 初始化字典哈希表已有节点数量
     n.used = 0;
 
     /* Is this the first initialization? If so it's not really a rehashing
      * we just set the first hash table so that it can accept keys. */
+    
+    // 如果ht[0]为空
     if (d->ht[0].table == NULL) {
+        // 将新哈希表赋值给ht[0]
         d->ht[0] = n;
+        // 返回成功状态
         return DICT_OK;
     }
 
     /* Prepare a second hash table for incremental rehashing */
+    
+    // ht[0]不为空，将新哈希表赋值给ht[1]
     d->ht[1] = n;
+    // 打开rehash标识
     d->rehashidx = 0;
+    // 返回成功状态
     return DICT_OK;
 }
 
@@ -289,61 +314,129 @@ int dictExpand(dict *d, unsigned long size)
  * keys to move from the old to the new hash table, otherwise 0 is returned.
  * Note that a rehashing step consists in moving a bucket (that may have more
  * than one key as we use chaining) from the old to the new hash table. */
+
+/*
+ * 字典渐进式rehash操作
+ *
+ * d 字典指针
+ * n 处理次数
+ *
+ */
 int dictRehash(dict *d, int n) {
+    
+    // 字典没有处于rehash操作中，返回0
     if (!dictIsRehashing(d)) return 0;
 
+    // 循环处理
     while(n--) {
+        
+        // 定义字典节点
         dictEntry *de, *nextde;
 
         /* Check if we already rehashed the whole table... */
+        
+        // 如果ht[0]已有的节点数量为0，表示已迁移完毕
         if (d->ht[0].used == 0) {
+            // 释放ht[0]的Bucket
             zfree(d->ht[0].table);
+            // 用ht[1]替换原来的ht[0]
             d->ht[0] = d->ht[1];
+            // 清空ht[1]
             _dictReset(&d->ht[1]);
+            // 标记rehash已完成
             d->rehashidx = -1;
+            // 返回0
             return 0;
         }
 
         /* Note that rehashidx can't overflow as we are sure there are more
          * elements because ht[0].used != 0 */
+        
+        // ht[0]已有的节点数量必须大于rehash进度索引
         assert(d->ht[0].size > (unsigned long)d->rehashidx);
+        
+        // 移动到ht[0]的Bucket中首个不为空的链表索引上
         while(d->ht[0].table[d->rehashidx] == NULL) d->rehashidx++;
+        
+        // 指向链表头
         de = d->ht[0].table[d->rehashidx];
+        
         /* Move all the keys in this bucket from the old to the new hash HT */
+        
+        // 将链表中的所有节点从h[0]迁移到h[1]
         while(de) {
+            // 初始化节点哈希值
             unsigned int h;
-
+            
+            // 获取当前节点的后续节点
             nextde = de->next;
+            
             /* Get the index in the new hash table */
+            
+            // 计算节点在ht[1]中的哈希值
             h = dictHashKey(d, de->key) & d->ht[1].sizemask;
+            
+            // 设置当前节点的后续节点为ht[1]中对应的节点
             de->next = d->ht[1].table[h];
+            
+            // 添加节点到ht[1]
             d->ht[1].table[h] = de;
+            // ht[0]节点数减1
             d->ht[0].used--;
+            // ht[1]节点数加1
             d->ht[1].used++;
+            // 将当前节点设为它的后续节点，继续处理
             de = nextde;
         }
+        
+        // 设置指针为空，下次处理时直接跳过
         d->ht[0].table[d->rehashidx] = NULL;
+        // 转到下一rehash索引
         d->rehashidx++;
     }
+    
+    // 返回1
     return 1;
 }
 
+/*
+ * 返回当前时间，以毫秒为单位
+ *
+ */
 long long timeInMilliseconds(void) {
+    // 初始化timeval结构体
     struct timeval tv;
 
+    // 获取当前时间
     gettimeofday(&tv,NULL);
+    
+    // 返回当前时间
     return (((long long)tv.tv_sec)*1000)+(tv.tv_usec/1000);
 }
 
 /* Rehash for an amount of time between ms milliseconds and ms+1 milliseconds */
+
+/*
+ * 在指定时间内(毫秒)对字典进行rehash
+ *
+ * d 字典指针
+ * ms 指定时间(毫秒)
+ *
+ */
 int dictRehashMilliseconds(dict *d, int ms) {
+    // 获取开始时间
     long long start = timeInMilliseconds();
+    // 初始化rehash进度
     int rehashes = 0;
 
+    // rehash字典，每次处理数量为100
     while(dictRehash(d,100)) {
+        // 步长为100
         rehashes += 100;
+        // 超出指定时间，跳出
         if (timeInMilliseconds()-start > ms) break;
     }
+    // 返回处理数量
     return rehashes;
 }
 
@@ -355,17 +448,40 @@ int dictRehashMilliseconds(dict *d, int ms) {
  * This function is called by common lookup or update operations in the
  * dictionary so that the hash table automatically migrates from H1 to H2
  * while it is actively used. */
+
+/*
+ * 将一个节点从ht[0]迁移到ht[1]
+ *
+ * d 字典指针
+ *
+ */
 static void _dictRehashStep(dict *d) {
+    // 正在运行的安全迭代器数量为0时，迁移一个节点
     if (d->iterators == 0) dictRehash(d,1);
 }
 
 /* Add an element to the target hash table */
+
+/*
+ * 给字典添加一个节点
+ * 
+ * d 字典指针
+ * key 键
+ * val 值
+ *
+ */
 int dictAdd(dict *d, void *key, void *val)
 {
+    // 定义一个字典节点，并设置键
     dictEntry *entry = dictAddRaw(d,key);
 
+    // 字典节点定义失败，返回错误状态
     if (!entry) return DICT_ERR;
+    
+    // 设置值
     dictSetVal(d, entry, val);
+    
+    // 返回成功状态
     return DICT_OK;
 }
 

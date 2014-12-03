@@ -210,7 +210,9 @@ typedef void (dictScanFunction)(void *privdata, const dictEntry *de);
 /* API */
 // 创建一个字典
 dict *dictCreate(dictType *type, void *privDataPtr);
+// 扩展或创建字典
 int dictExpand(dict *d, unsigned long size);
+// 给字典添加一个节点
 int dictAdd(dict *d, void *key, void *val);
 dictEntry *dictAddRaw(dict *d, void *key);
 int dictReplace(dict *d, void *key, void *val);
@@ -234,7 +236,9 @@ unsigned int dictGenCaseHashFunction(const unsigned char *buf, int len);
 void dictEmpty(dict *d, void(callback)(void*));
 void dictEnableResize(void);
 void dictDisableResize(void);
+// 字典渐进式rehash操作
 int dictRehash(dict *d, int n);
+// 在指定时间内(毫秒)对字典进行rehash
 int dictRehashMilliseconds(dict *d, int ms);
 void dictSetHashFunctionSeed(unsigned int initval);
 unsigned int dictGetHashFunctionSeed(void);
