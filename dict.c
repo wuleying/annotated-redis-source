@@ -500,6 +500,14 @@ int dictAdd(dict *d, void *key, void *val)
  * If key already exists NULL is returned.
  * If key was added, the hash entry is returned to be manipulated by the caller.
  */
+
+/*
+ * 给字典添加一个键
+ *
+ * d 字典指针
+ * key 键
+ *
+ */
 dictEntry *dictAddRaw(dict *d, void *key)
 {
     int index;

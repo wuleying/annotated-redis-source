@@ -214,6 +214,7 @@ dict *dictCreate(dictType *type, void *privDataPtr);
 int dictExpand(dict *d, unsigned long size);
 // 给字典添加一个节点
 int dictAdd(dict *d, void *key, void *val);
+// 给字典添加一个键
 dictEntry *dictAddRaw(dict *d, void *key);
 int dictReplace(dict *d, void *key, void *val);
 dictEntry *dictReplaceRaw(dict *d, void *key);
