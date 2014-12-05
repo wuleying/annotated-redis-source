@@ -511,7 +511,9 @@ int dictAdd(dict *d, void *key, void *val)
 dictEntry *dictAddRaw(dict *d, void *key)
 {
     int index;
+    // 字典节点
     dictEntry *entry;
+    // 字典哈希表
     dictht *ht;
 
     if (dictIsRehashing(d)) _dictRehashStep(d);
