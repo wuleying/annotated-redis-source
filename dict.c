@@ -510,28 +510,43 @@ int dictAdd(dict *d, void *key, void *val)
  */
 dictEntry *dictAddRaw(dict *d, void *key)
 {
+    // 索引位置
     int index;
     // 字典节点
     dictEntry *entry;
     // 字典哈希表
     dictht *ht;
 
+    // 如果字典正在rehash中 尝试rehash一个节点
     if (dictIsRehashing(d)) _dictRehashStep(d);
 
     /* Get the index of the new element, or -1 if
      * the element already exists. */
+    
+    // 查找节点的索引位置 如果键已存在返加NULL
     if ((index = _dictKeyIndex(d, key)) == -1)
         return NULL;
 
     /* Allocate the memory and store the new entry */
+    
+    // 如果字典正在rehash中 将节点放到ht[1] 反之放入ht[0]
     ht = dictIsRehashing(d) ? &d->ht[1] : &d->ht[0];
+    
+    // 为节点分配内存
     entry = zmalloc(sizeof(*entry));
+    // 新节点的后续指向旧的表头节点
     entry->next = ht->table[index];
+    // 设置新节点为表头
     ht->table[index] = entry;
+    // 已有节点数量加1
     ht->used++;
 
     /* Set the hash entry fields. */
+    
+    // 关联节点与键
     dictSetKey(d, entry, key);
+    
+    // 返回节点
     return entry;
 }
 
@@ -539,24 +554,45 @@ dictEntry *dictAddRaw(dict *d, void *key)
  * Return 1 if the key was added from scratch, 0 if there was already an
  * element with such key and dictReplace() just performed a value update
  * operation. */
+
+/*
+ * 替换键对应的值
+ *
+ * d 字典指针
+ * key 键
+ * val 新值
+ *
+ */
 int dictReplace(dict *d, void *key, void *val)
 {
+    // 节点
     dictEntry *entry, auxentry;
 
     /* Try to add the element. If the key
      * does not exists dictAdd will suceed. */
+    
+    // 尝试直接添加节点到字典 键不存在就会添加成功 直接并返回1
     if (dictAdd(d, key, val) == DICT_OK)
         return 1;
+    
     /* It already exists, get the entry */
+    
+    // 添加失败表示节点存在 获取键对应的节点
     entry = dictFind(d, key);
+    
     /* Set the new value and free the old one. Note that it is important
      * to do that in this order, as the value may just be exactly the same
      * as the previous one. In this context, think to reference counting,
      * you want to increment (set), and then decrement (free), and not the
      * reverse. */
+    
+    // 指向旧值
     auxentry = *entry;
+    // 设置新值
     dictSetVal(d, entry, val);
+    // 释放旧值
     dictFreeVal(d, &auxentry);
+    // 返回0
     return 0;
 }
 
@@ -566,90 +602,198 @@ int dictReplace(dict *d, void *key, void *val)
  * existing key is returned.)
  *
  * See dictAddRaw() for more information. */
+
+/*
+ * 给字典添加一个键 类似dictAddRaw
+ *
+ * d 字典指针
+ * key 键
+ *
+ */
 dictEntry *dictReplaceRaw(dict *d, void *key) {
+    
+    // 获取键对应的节点
     dictEntry *entry = dictFind(d,key);
 
+    // 如果找到对应的节点则直接返回 未找到则使用dictAddRaw添加键
     return entry ? entry : dictAddRaw(d,key);
 }
 
 /* Search and remove an element */
+
+/*
+ * 根据键查找并删除节点
+ *
+ * d 字典指针
+ * key 键
+ * nofree 不释放节点内存
+ *
+ */
 static int dictGenericDelete(dict *d, const void *key, int nofree)
 {
+    // 节点哈希值
+    // 节点索引
     unsigned int h, idx;
+    // 字典节点
     dictEntry *he, *prevHe;
+    // 字典哈希表计数器
     int table;
 
+    // ht[0]是空表 返回错误状态
     if (d->ht[0].size == 0) return DICT_ERR; /* d->ht[0].table is NULL */
     if (dictIsRehashing(d)) _dictRehashStep(d);
+    // 获取节点哈希值
     h = dictHashKey(d, key);
 
+    // 在两个哈希表中查找
     for (table = 0; table <= 1; table++) {
+        
+        // 获取索引值
         idx = h & d->ht[table].sizemask;
+        // 获取索引在Bucket中对应的表头
         he = d->ht[table].table[idx];
+        // 前驱表头设为NULL
         prevHe = NULL;
+        
+        // 遍历链表
         while(he) {
+            // 比较两个键
             if (dictCompareKeys(d, key, he->key)) {
                 /* Unlink the element from the list */
+                // 断开获取链表关联
+                // 存在前驱表头
                 if (prevHe)
+                    // 将前驱表头的后续设为当前节点的后续
                     prevHe->next = he->next;
                 else
+                    // Bucket表头设为当前节点的后续
                     d->ht[table].table[idx] = he->next;
+                
+                // 如果需要释放节点内存
                 if (!nofree) {
+                    // 释放键
                     dictFreeKey(d, he);
+                    // 释放值
                     dictFreeVal(d, he);
                 }
+                // 释放节点
                 zfree(he);
+                // 已有节点数量减1
                 d->ht[table].used--;
+                // 返回成功状态
                 return DICT_OK;
             }
+            // 未找到键对应节点 将节点设为前驱节点
             prevHe = he;
+            // 将节点设为当前节点后续 继续查找
             he = he->next;
         }
+        
+        // 如果未进行rehash 就不需要遍历ht[1]
         if (!dictIsRehashing(d)) break;
     }
+    
+    // 遍历完毕后未发现键对应节点 返回失败状态
     return DICT_ERR; /* not found */
 }
 
+/*
+ * 删除键 并释放对应节点内存
+ *
+ * ht 字典指针
+ * key 键
+ *
+ */
 int dictDelete(dict *ht, const void *key) {
+    // 调用dictGenericDelete删除键
     return dictGenericDelete(ht,key,0);
 }
 
+/*
+ * 删除键 但不释放对应节点内存
+ *
+ * ht 字典指针
+ * key 键
+ *
+ */
 int dictDeleteNoFree(dict *ht, const void *key) {
+    // 调用dictGenericDelete删除键
     return dictGenericDelete(ht,key,1);
 }
 
 /* Destroy an entire dictionary */
+
+/*
+ * 从字典中销毁指定哈希表
+ *
+ * d 字典指针
+ * ht 要销毁的哈希表
+ * callback 回调函数指针
+ *
+ */
 int _dictClear(dict *d, dictht *ht, void(callback)(void *)) {
+    
+    // 遍历计数器
     unsigned long i;
 
     /* Free all the elements */
+    // 遍历释放所有元素
     for (i = 0; i < ht->size && ht->used > 0; i++) {
+        // 节点
+        // 后续节点
         dictEntry *he, *nextHe;
 
+        // 如果定义了回调函数 使用回调函数处理函数的私有数据
         if (callback && (i & 65535) == 0) callback(d->privdata);
 
+        // 如果Bucket为空 跳过这次循环
         if ((he = ht->table[i]) == NULL) continue;
+        
+        // 遍历链表上的节点
         while(he) {
+            // 获取后续节点
             nextHe = he->next;
+            // 释放键
             dictFreeKey(d, he);
+            // 释放值
             dictFreeVal(d, he);
+            // 释放节点
             zfree(he);
+            // 已有节点数量减1
             ht->used--;
+            // 将后续节点设为当前 继续循环
             he = nextHe;
         }
     }
     /* Free the table and the allocated cache structure */
+    
+    // 释放哈希表
     zfree(ht->table);
+    
     /* Re-initialize the table */
+    
+    // 重置字典哈希表属性
     _dictReset(ht);
+    
+    // 返回成功状态 永远都不会失败
     return DICT_OK; /* never fails */
 }
 
 /* Clear & Release the hash table */
+
+/*
+ * 清空并释放字典
+ *
+ * d 字典指针
+ *
+ */
 void dictRelease(dict *d)
 {
+    // 销毁ht[0]
     _dictClear(d,&d->ht[0],NULL);
+    // 销毁ht[1]
     _dictClear(d,&d->ht[1],NULL);
+    // 释放字典
     zfree(d);
 }
 

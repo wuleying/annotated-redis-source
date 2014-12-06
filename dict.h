@@ -182,13 +182,13 @@ typedef void (dictScanFunction)(void *privdata, const dictEntry *de);
         entry->key = (_key_); \
 } while(0)
 
-// 比较字典中两个节点的key，如果定义了keyCompare函数指针，则执行此函数
+// 比较两个键，如果定义了keyCompare函数指针，则执行此函数
 #define dictCompareKeys(d, key1, key2) \
     (((d)->type->keyCompare) ? \
         (d)->type->keyCompare((d)->privdata, key1, key2) : \
         (key1) == (key2))
 
-// 查找字典中key对应的节点
+// 获取字典中key对应的节点哈希值
 #define dictHashKey(d, key) (d)->type->hashFunction(key)
 // 获取字典节点的key
 #define dictGetKey(he) ((he)->key)
@@ -216,10 +216,15 @@ int dictExpand(dict *d, unsigned long size);
 int dictAdd(dict *d, void *key, void *val);
 // 给字典添加一个键
 dictEntry *dictAddRaw(dict *d, void *key);
+// 替换键对应的值
 int dictReplace(dict *d, void *key, void *val);
+// 给字典添加一个键 类似dictAddRaw
 dictEntry *dictReplaceRaw(dict *d, void *key);
+// 删除键 并释放对应节点内存
 int dictDelete(dict *d, const void *key);
+// 删除键 但不释放对应节点内存
 int dictDeleteNoFree(dict *d, const void *key);
+// 清空并释放字典
 void dictRelease(dict *d);
 dictEntry * dictFind(dict *d, const void *key);
 void *dictFetchValue(dict *d, const void *key);
