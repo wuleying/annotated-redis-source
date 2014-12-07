@@ -226,7 +226,9 @@ int dictDelete(dict *d, const void *key);
 int dictDeleteNoFree(dict *d, const void *key);
 // 清空并释放字典
 void dictRelease(dict *d);
+// 在字典中查找键对应的节点
 dictEntry * dictFind(dict *d, const void *key);
+// 在字典中查找键对应的值
 void *dictFetchValue(dict *d, const void *key);
 // 调整字典大小，让已有节点数与Bucket比率尽量接近小于等于1
 int dictResize(dict *d);

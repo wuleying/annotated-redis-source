@@ -641,6 +641,8 @@ static int dictGenericDelete(dict *d, const void *key, int nofree)
 
     // ht[0]是空表 返回错误状态
     if (d->ht[0].size == 0) return DICT_ERR; /* d->ht[0].table is NULL */
+    
+    // 如果字典正在rehash中 尝试rehash一个节点
     if (dictIsRehashing(d)) _dictRehashStep(d);
     // 获取节点哈希值
     h = dictHashKey(d, key);
@@ -797,31 +799,72 @@ void dictRelease(dict *d)
     zfree(d);
 }
 
+/*
+ * 在字典中查找键对应的节点
+ *
+ * d 字典节点
+ * key 键
+ *
+ */
 dictEntry *dictFind(dict *d, const void *key)
 {
+    // 字典哈希表节点
     dictEntry *he;
+    
+    // 定义节点哈希值
+    // 定义索引值
+    // 定义字典哈希表计数器
     unsigned int h, idx, table;
 
+    // 如果ht[0]大小为0 直接返回空
     if (d->ht[0].size == 0) return NULL; /* We don't have a table at all */
+    
+    // 如果字典正在rehash中 尝试rehash一个节点
     if (dictIsRehashing(d)) _dictRehashStep(d);
+    
+    // 获取节点哈希值
     h = dictHashKey(d, key);
+    
+    // 在两个哈希表中查找
     for (table = 0; table <= 1; table++) {
+        // 获取索引值
         idx = h & d->ht[table].sizemask;
+        // 获取索引在Bucket中对应的表头
         he = d->ht[table].table[idx];
+        // 遍历链表
         while(he) {
+            // 比较两个键是否相同
             if (dictCompareKeys(d, key, he->key))
+                // 返回匹配的节点
                 return he;
+            
+            // 不匹配 将后续节点设为当前节点 继续查找
             he = he->next;
         }
+        
+        // 如果未进行rehash 就不需要遍历ht[1]
         if (!dictIsRehashing(d)) return NULL;
     }
+    
+    // 遍历结束未找到则返回空
     return NULL;
 }
 
+/*
+ * 在字典中查找键对应的值
+ *
+ * d 字典节点
+ * key 键
+ *
+ */
 void *dictFetchValue(dict *d, const void *key) {
+    // 字典哈希表节点
     dictEntry *he;
 
+    // 使用dictFind方法查找节点
     he = dictFind(d,key);
+    
+    // 如果查找到对应节点 返回节点的值 否则返回空
     return he ? dictGetVal(he) : NULL;
 }
 
@@ -831,6 +874,13 @@ void *dictFetchValue(dict *d, const void *key) {
  * the fingerprint again when the iterator is released.
  * If the two fingerprints are different it means that the user of the iterator
  * performed forbidden operations against the dictionary while iterating. */
+
+/*
+ * 通过指纹来禁止每个不安全的哈希迭代器的非法操作 每个不安全迭代器只能有一个指纹
+ *
+ * d 字典指针
+ *
+ */
 long long dictFingerprint(dict *d) {
     long long integers[6], hash = 0;
     int j;
