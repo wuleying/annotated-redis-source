@@ -913,16 +913,30 @@ long long dictFingerprint(dict *d) {
     return hash;
 }
 
+/*
+ * 给指定字典创建一个不安全迭代器
+ *
+ * d 字典指针
+ *
+ */
 dictIterator *dictGetIterator(dict *d)
 {
+    // 分配迭代器内存
     dictIterator *iter = zmalloc(sizeof(*iter));
 
+    // 设置字典
     iter->d = d;
+    // 设置正在迭代的哈希表为ht[0]
     iter->table = 0;
+    // 设置正在迭代的哈希表的数组索引
     iter->index = -1;
+    // 标记为不安全迭代器
     iter->safe = 0;
+    // 设置当前节点
     iter->entry = NULL;
+    // 后续节点
     iter->nextEntry = NULL;
+    // 返回迭代器
     return iter;
 }
 

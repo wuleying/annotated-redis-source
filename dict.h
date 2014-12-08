@@ -121,9 +121,9 @@ typedef struct dict {
 typedef struct dictIterator {
     // 字典
     dict *d;
-    // 正在迭代的哈希表的代码(0或1)
+    // 正在迭代的哈希表的数组索引
     long index;
-    // table 正在迭代的哈希表的数组索引
+    // table 正在迭代的哈希表的代码(0或1)
     // safe 是否是安全迭代器 不安全的迭代器只可调用dictNext方法
     int table, safe;
     // entry 当前哈希节点
@@ -232,6 +232,7 @@ dictEntry * dictFind(dict *d, const void *key);
 void *dictFetchValue(dict *d, const void *key);
 // 调整字典大小，让已有节点数与Bucket比率尽量接近小于等于1
 int dictResize(dict *d);
+// 给指定字典创建一个不安全迭代器
 dictIterator *dictGetIterator(dict *d);
 dictIterator *dictGetSafeIterator(dict *d);
 dictEntry *dictNext(dictIterator *iter);
