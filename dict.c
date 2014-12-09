@@ -940,13 +940,27 @@ dictIterator *dictGetIterator(dict *d)
     return iter;
 }
 
+/*
+ * 给指定字典创建一个安全迭代器
+ *
+ * d 字典指针
+ *
+ */
 dictIterator *dictGetSafeIterator(dict *d) {
+    // 先使用dictGetIterator创建一个不安全迭代器
     dictIterator *i = dictGetIterator(d);
-
+    // 标记为安全迭代器
     i->safe = 1;
+    // 返回迭代器
     return i;
 }
 
+/*
+ * 返回迭代器指向的当前节点
+ *
+ * iter 迭代器指针
+ *
+ */
 dictEntry *dictNext(dictIterator *iter)
 {
     while (1) {
@@ -972,6 +986,8 @@ dictEntry *dictNext(dictIterator *iter)
         } else {
             iter->entry = iter->nextEntry;
         }
+        
+        
         if (iter->entry) {
             /* We need to save the 'next' here, the iterator user
              * may delete the entry we are returning. */
@@ -979,6 +995,8 @@ dictEntry *dictNext(dictIterator *iter)
             return iter->entry;
         }
     }
+    
+    // 字典迭代完毕 返回空
     return NULL;
 }
 

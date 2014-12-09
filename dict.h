@@ -234,7 +234,9 @@ void *dictFetchValue(dict *d, const void *key);
 int dictResize(dict *d);
 // 给指定字典创建一个不安全迭代器
 dictIterator *dictGetIterator(dict *d);
+// 给指定字典创建一个安全迭代器
 dictIterator *dictGetSafeIterator(dict *d);
+// 返回迭代器指向的当前节点
 dictEntry *dictNext(dictIterator *iter);
 void dictReleaseIterator(dictIterator *iter);
 dictEntry *dictGetRandomKey(dict *d);
