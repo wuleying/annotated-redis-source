@@ -1000,6 +1000,12 @@ dictEntry *dictNext(dictIterator *iter)
     return NULL;
 }
 
+/*
+ * 释放迭代器
+ *
+ * iter 迭代器指针
+ *
+ */
 void dictReleaseIterator(dictIterator *iter)
 {
     if (!(iter->index == -1 && iter->table == 0)) {
@@ -1013,6 +1019,13 @@ void dictReleaseIterator(dictIterator *iter)
 
 /* Return a random entry from the hash table. Useful to
  * implement randomized algorithms */
+
+/*
+ * 从字典中返回一个随机节点
+ *
+ * d 字典指针
+ *
+ */
 dictEntry *dictGetRandomKey(dict *d)
 {
     dictEntry *he, *orighe;

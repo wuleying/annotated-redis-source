@@ -238,7 +238,9 @@ dictIterator *dictGetIterator(dict *d);
 dictIterator *dictGetSafeIterator(dict *d);
 // 返回迭代器指向的当前节点
 dictEntry *dictNext(dictIterator *iter);
+// 释放迭代器
 void dictReleaseIterator(dictIterator *iter);
+// 从字典中返回一个随机节点
 dictEntry *dictGetRandomKey(dict *d);
 unsigned int dictGetRandomKeys(dict *d, dictEntry **des, unsigned int count);
 void dictPrintStats(dict *d);
